@@ -115,7 +115,7 @@ class Student {
       ) / gradeValues.length;
 
     const attendancePercentage: number =
-      (this.attendance.filter((present: boolean) => present).length /
+      (this.attendance.filter((present: boolean) => present===true).length /
         this.attendance.length) *
       100;
 

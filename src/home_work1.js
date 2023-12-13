@@ -108,7 +108,7 @@ var Student = /** @class */ (function () {
         if (gradeValues.length === 0)
             return 0;
         var averageGrade = gradeValues.reduce(function (sum, grade) { return sum + grade; }, 0) / gradeValues.length;
-        var attendancePercentage = (this.attendance.filter(function (present) { return present; }).length /
+        var attendancePercentage = (this.attendance.filter(function (present) { return present === true; }).length /
             this.attendance.length) *
             100;
         return (averageGrade + attendancePercentage) / 2;
