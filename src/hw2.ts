@@ -204,7 +204,7 @@ class Student {
 // petro.setGrate('math', 25);
 // petro.setGrate('history', 10);
 // petro.setVisit('math', false);
-// petro.setVisit('math2', false);
+
 // petro.setVisit('history', true);
 // // console.log(ivan.visits);
 // // console.log(ivan.getPerformanceRating());
