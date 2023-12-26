@@ -102,21 +102,51 @@ class AccountingDepartment extends Department {
       this.balance.preEmployee.push(entity);
     }
   }
-  removeFromBalance(entity: Employee | Department | PreEmployee): void {
+  // removeFromBalance(entity: Employee | Department | PreEmployee): void {
+  //   if (entity instanceof Employee) {
+  //     this.balance.employeesOfDepartments = this.balance.employeesOfDepartments.filter(
+  //       employee => employee.name !== entity.name && employee.surname !== entity.surname
+  //     );
+  //   } else if (entity instanceof Department) {
+  //     this.balance.departments = this.balance.departments.filter(
+  //       department => department.name !== entity.name && department.area !== entity.area
+  //     );
+  //   } else {
+  //     this.balance.preEmployee = this.balance.preEmployee.filter(
+  //       employee => employee.name !== entity.name && employee.surname !== entity.surname
+  //     );
+  //   }
+  // }
+   removeFromBalance(entity: Employee | Department | PreEmployee): void {
     if (entity instanceof Employee) {
-      this.balance.employeesOfDepartments = this.balance.employeesOfDepartments.filter(
-        employee => employee.name !== entity.name && employee.surname !== entity.surname
+      this.balance.employeesOfDepartments = this.removeEntityFromList(
+        this.balance.employeesOfDepartments,
+        entity
       );
     } else if (entity instanceof Department) {
-      this.balance.departments = this.balance.departments.filter(
-        department => department.name !== entity.name && department.area !== entity.area
+      this.balance.departments = this.removeEntityFromList(
+        this.balance.departments,
+        entity
       );
     } else {
-      this.balance.preEmployee = this.balance.preEmployee.filter(
-        employee => employee.name !== entity.name && employee.surname !== entity.surname
+      this.balance.preEmployee = this.removeEntityFromList(
+        this.balance.preEmployee,
+        entity
       );
     }
   }
+  private removeEntityFromList(list, entity){
+    return list.filter((item) =>{
+      if ('surname' in entity) {
+      return item.name !== entity.name && item.surname !== entity.surname;
+    } else if ('area' in entity) {
+      return item.name !== entity.name && item.area !== entity.area;
+    } else {
+      return false;
+    }})
+ 
+  }
+
   payingSalary(): [Budget, number] {
     const calculateEmployeesSalary = this.balance.employeesOfDepartments.reduce(
       (sum: number, employee: { salary: number; status: StatusOfEmployees }) =>
