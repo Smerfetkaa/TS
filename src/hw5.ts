@@ -2,6 +2,7 @@ abstract class Shape {
   constructor(public readonly name: string, public readonly color: string) {}
 
   abstract calculateArea(): number;
+  public print(): void {}
 }
 class Circle extends Shape {
   constructor(private radius: number, color: string) {
@@ -38,8 +39,9 @@ class Triangle extends Shape {
   constructor(private baseSide: number, private height: number, color: string) {
     super('Triangle', color);
   }
-   calculateArea(): number {
+  calculateArea(): number {
     return (this.baseSide * this.height) / 2;
   }
 }
-
+const square: Square = new Square(4, 'red');
+console.log(square.print());
