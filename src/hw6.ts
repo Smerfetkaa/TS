@@ -43,7 +43,7 @@ const user: IUser = {
 // а інший розширює перший, додаючи специфічні властивості.
 
 interface IFirst {
-  [key: string]: string | number;
+ [key: string]: string | number;
 }
 
 interface ISecond extends IFirst {
@@ -52,8 +52,10 @@ interface ISecond extends IFirst {
 
 const a: ISecond = {
   name: 'Lana',
-  age: 23,
+  age:23
 };
+
+
 // Напишіть функцію, яка отримує об'єкт з індексною сигнатурою і перевіряє,
 // чи відповідають значення певних ключів певним критеріям(наприклад, чи всі значення є числами).
 
