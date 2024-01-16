@@ -2,8 +2,12 @@ abstract class Shape {
   constructor(public readonly name: string, public readonly color: string) {}
 
   abstract calculateArea(): number;
-  public print(): void {}
 }
+
+interface RectangleShape {
+  print(): string;
+}
+
 class Circle extends Shape {
   constructor(private radius: number, color: string) {
     super('Circle', color);
@@ -13,7 +17,7 @@ class Circle extends Shape {
     return Math.PI * this.radius ** 2;
   }
 }
-class Rectangle extends Shape {
+class Rectangle extends Shape implements RectangleShape {
   constructor(private height: number, private width: number, color: string) {
     super('Rectangle', color);
   }
@@ -24,7 +28,7 @@ class Rectangle extends Shape {
     return 'S = width * height';
   }
 }
-class Square extends Shape {
+class Square extends Shape implements RectangleShape {
   constructor(private side: number, color: string) {
     super('Square', color);
   }
