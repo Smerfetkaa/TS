@@ -24,7 +24,7 @@ class Stack<T> {
 type A = string | number | symbol;
 
 class Dictionary<K extends A, V> {
-  constructor(private dictionary: { [key in K]: V }) {}
+  constructor(private dictionary: Record<K,V>) {}
   set(key: K, value: V) {
     this.dictionary[key] = value;
   }
