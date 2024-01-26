@@ -1,4 +1,4 @@
-type TypeFromFunction<T> = T extends (param: any) => infer V ? V : never;
+type TypeFromFunction<T> = T extends (...param: any[]) => infer V ? V : never;
 
 type TypeFromFunction2<T> = T extends (param: (infer U)[]) => infer V
   ? [V, U]
@@ -6,8 +6,8 @@ type TypeFromFunction2<T> = T extends (param: (infer U)[]) => infer V
   ? [V, U]
   : never;
 
-// const foo = (param: string[]): number => {
-//   return param.length;
+// const foo = (param: string[], param2:number): number => {
+//   return param.length + param2;
 // };
 
 // type ReturnType3 = TypeFromFunction<typeof foo>;
