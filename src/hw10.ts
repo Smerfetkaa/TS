@@ -56,7 +56,7 @@ interface FilmList extends List<MovieListState> {
 interface CategoryList extends List<CategoryListState> {
   categories: Category[];
 }
-abstract class BaseList<T extends BaseListState> implements List<T> {
+class BaseList<T extends BaseListState> implements List<T> {
   constructor(public state: T) {}
 
   applyFiltersValue(filters: Filter[]): void {
