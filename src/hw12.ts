@@ -1,22 +1,24 @@
-function DeprecatedMethod<T, A extends any[], R>(
-  originalMethod: (...args: A) => R,
-  context: ClassMethodDecoratorContext<T, (...args: A) => R>
-) {
-  if (context.kind !== 'method') throw new Error('Only Method decorator');
+function DeprecatedMethod(info: { reason: string; newMethod: string }) {
+  return function <T, A extends any[], R>(
+    originalMethod: (...args: A) => R,
+    context: ClassMethodDecoratorContext<T, (...args: A) => R>
+  ) {
+    if (context.kind !== 'method') throw new Error('Only Method decorator');
 
-  function newMethod(this: T, ...args: A): R {
-    console.warn(`Method ${String(context.name)} is deprecated.`);
+    function newMethod(this: T, ...args: A): R {
+      console.warn(`Method ${String(context.name)} is deprecated, because ${info.reason} `);
 
-    console.warn(`Please use method 'newMethod'`);
+      console.warn(`Please use method ${info.newMethod}`);
 
-    return originalMethod.call(this, ...args);
-  }
+      return originalMethod.call(this, ...args);
+    }
 
-  return newMethod;
+    return newMethod;
+  };
 }
 
 class MyClass {
-  @DeprecatedMethod
+  @DeprecatedMethod({ reason: 'Improving efficiency', newMethod: 'newMethod' })
   public oldMethod() {
     console.log('Old method used');
   }
@@ -56,6 +58,7 @@ class User {
   _email: string = '';
 
   @MinMaxLength(2, 10)
+  @CheckEmail
   public set name(value: string) {
     this._name = value;
   }
