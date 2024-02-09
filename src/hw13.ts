@@ -67,7 +67,7 @@ class TodoList {
     if ((note instanceof ConfirmationNote && note.confirmation(confirmation)) || note instanceof DefaultNote) {
       if (title) note.title = title;
       if (content) note.content = content;
-      if (status) note.status = status;
+      if (status === 'done') note.markAsDone();
       note.editDate = new Date();
     }
   }
