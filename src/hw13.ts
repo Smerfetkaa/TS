@@ -1,53 +1,61 @@
 type NoteStatus = 'todo' | 'done';
-type fieldsToSort = 'status' | 'creationDate';
-type fieldsToSearch = 'title' | 'content';
-interface IDefaultNote {
+
+type INotePayload = Partial<Pick<INote, 'title' | 'content'>>;
+interface INote {
   id: number;
   title: string;
   content: string;
   creationDate: Date;
-  editDate: Date;
+  editDate: Date | null;
   status: NoteStatus;
   markAsDone(): void;
 }
-class DefaultNote implements IDefaultNote {
-  id: number;
+abstract class BaseNote implements INote {
+  readonly id: number;
   title: string;
   content: string;
-  creationDate: Date;
-  editDate: Date;
-  status: NoteStatus;
-
+  readonly creationDate: Date = new Date();
+  editDate: Date | null = null;
+  status: NoteStatus = 'todo';
   constructor(id: number, title: string, content: string) {
     this.id = id;
     this.title = title;
     this.content = content;
-    this.creationDate = new Date();
-    this.editDate = new Date();
-    this.status = 'todo';
   }
-
-  markAsDone() {
+  markAsDone(): void {
     this.status = 'done';
   }
-}
-class ConfirmationNote extends DefaultNote {
-  type = 'required';
-  requiresConfirmation: boolean = true;
-
-  confirmation(value: boolean) {
-    if (value) return true;
-    else return false;
+  editNote({ title, content }: INotePayload): void {
+    if (title?.trim()) this.title = title;
+    if (content?.trim()) this.content = content;
+    this.editDate = new Date();
   }
+  abstract requiresConfirmation: boolean;
 }
-class TodoList {
+class DefaultNote extends BaseNote {
+  readonly requiresConfirmation: boolean = false;
+}
+class ConfirmationNote extends BaseNote {
+  readonly requiresConfirmation: boolean = true;
+}
+
+interface ITodoList {
   notes: (DefaultNote | ConfirmationNote)[];
-
-  constructor() {
-    this.notes = [];
-  }
+  addNote(title: string, content: string, requiresConfirmation: boolean): void;
+  deleteNote(id: number): DefaultNote | ConfirmationNote | null;
+  editNote(id: number, confirmation: boolean, { title, content }: INotePayload): ConfirmationNote | DefaultNote;
+  markAsDone(id: number): void;
+  getNoteById(id: number): DefaultNote | ConfirmationNote | undefined;
+  getAllNotes(): (DefaultNote | ConfirmationNote)[];
+  getNotesCount(): { all: number; uncompleted: number };
+}
+class TodoList implements ITodoList {
+  notes: (DefaultNote | ConfirmationNote)[] = [];
 
   addNote(title: string, content: string, requiresConfirmation: boolean) {
+    if (!title.trim() || !content.trim()) {
+      throw new Error('Can`t be empty');
+    }
     const id = this.notes.length + 1;
     if (requiresConfirmation === true) {
       const note = new ConfirmationNote(id, title, content);
@@ -58,22 +66,44 @@ class TodoList {
     }
   }
 
-  deleteNote(id: number) {
-    this.notes = this.notes.filter(note => note.id !== id);
-  }
-
-  editNote(id: number, confirmation: boolean, title?: string, content?: string, status?: NoteStatus) {
+  deleteNote(id: number): DefaultNote | ConfirmationNote | null {
     const note = this.notes.find(note => note.id === id);
-    if ((note instanceof ConfirmationNote && note.confirmation(confirmation)) || note instanceof DefaultNote) {
-      if (title) note.title = title;
-      if (content) note.content = content;
-      if (status === 'done') note.markAsDone();
-      note.editDate = new Date();
-    }
+    this.notes = this.notes.filter(note => note.id !== id);
+    if (!note) {
+      throw new Error('Note not found');
+    } else return note;
   }
 
+  editNote(id: number, confirmation: boolean, { title, content }: INotePayload): ConfirmationNote | DefaultNote {
+    const note = this.notes.find(note => note.id === id);
+    if (!note) {
+      throw new Error('Note not found');
+    }
+    const oldNote = { ...note };
+    if (note instanceof ConfirmationNote) {
+      if (confirmation) {
+        note.editNote({ title, content });
+      }
+    } else {
+      note.editNote({ title, content });
+    }
+    return note instanceof ConfirmationNote
+      ? new ConfirmationNote(oldNote.id, oldNote.title, oldNote.content)
+      : new DefaultNote(oldNote.id, oldNote.title, oldNote.content);
+  }
+
+  markAsDone(id: number) {
+    const note = this.notes.find(note => note.id === id);
+    if (!note) {
+      throw new Error('Note not found');
+    }
+    note.markAsDone();
+  }
   getNoteById(id: number): DefaultNote | ConfirmationNote | undefined {
-    return this.notes.find(note => note.id === id);
+    const note = this.notes.find(note => note.id === id);
+    if (!note) {
+      throw new Error('Note not found');
+    } else return note;
   }
 
   getAllNotes(): (DefaultNote | ConfirmationNote)[] {
@@ -83,23 +113,27 @@ class TodoList {
   getNotesCount(): { all: number; uncompleted: number } {
     return { all: this.notes.length, uncompleted: this.notes.filter(note => note.status === 'todo').length };
   }
-
-  searchNotesByKeyword(keyword: string, el: fieldsToSearch): (DefaultNote | ConfirmationNote)[] {
-    if (el === 'title')
-      return this.notes.filter(note => note.title.toLocaleLowerCase().includes(keyword.toLocaleLowerCase()));
-    else return this.notes.filter(note => note.content.toLocaleLowerCase().includes(keyword.toLocaleLowerCase()));
+}
+class TodoListWithSearch extends TodoList {
+  searchNotesByTitle(title: string): (DefaultNote | ConfirmationNote)[] {
+    return this.notes.filter(note => note.title.toLocaleLowerCase().includes(title.toLocaleLowerCase()));
   }
-
-  sortNotes(sortBy: fieldsToSort): (DefaultNote | ConfirmationNote)[] {
-    if (sortBy === 'status') return this.notes.sort((a, b) => a.status.localeCompare(b.status));
-    else return this.notes.sort((a, b) => a.creationDate.getTime() - b.creationDate.getTime());
+  searchNotesByContent(content: string): (DefaultNote | ConfirmationNote)[] {
+    return this.notes.filter(note => note.content.toLocaleLowerCase().includes(content.toLocaleLowerCase()));
   }
 }
-
-function searchNotes(keyword: string, todoList: TodoList, el: fieldsToSearch): (DefaultNote | ConfirmationNote)[] {
-  return todoList.searchNotesByKeyword(keyword, el);
+class TodoListWithSort extends TodoList {
+  sortNotesByStatus(): (DefaultNote | ConfirmationNote)[] {
+    return this.notes.sort((a, b) => a.status.localeCompare(b.status));
+  }
+  sortNotesByCreation(): (DefaultNote | ConfirmationNote)[] {
+    return this.notes.sort((a, b) => a.creationDate.getTime() - b.creationDate.getTime());
+  }
 }
+const list = new TodoList();
+list.addNote('title', 'context', false);
+list.addNote('titleR', 'contextR', true);
+// console.log(list.deleteNote(1));
 
-function sortNote(todoList: TodoList, sortBy: fieldsToSort) {
-  return todoList.sortNotes(sortBy);
-}
+console.log(list.editNote(2, true, { title: 'newTitle', content: 'NewContent' }));
+console.log(list.getAllNotes());
