@@ -1,6 +1,6 @@
 type NoteStatus = 'todo' | 'done';
-
 type INotePayload = Partial<Pick<INote, 'title' | 'content'>>;
+
 interface INote {
   id: number;
   title: string;
@@ -25,25 +25,38 @@ abstract class BaseNote implements INote {
   markAsDone(): void {
     this.status = 'done';
   }
+  abstract editNote({ title, content }: INotePayload, confirmation: boolean): void;
+
+  abstract readonly requiresConfirmation: boolean;
+}
+class DefaultNote extends BaseNote {
+  readonly requiresConfirmation: boolean = false;
+
   editNote({ title, content }: INotePayload): void {
     if (title?.trim()) this.title = title;
     if (content?.trim()) this.content = content;
     this.editDate = new Date();
   }
-  abstract requiresConfirmation: boolean;
-}
-class DefaultNote extends BaseNote {
-  readonly requiresConfirmation: boolean = false;
 }
 class ConfirmationNote extends BaseNote {
   readonly requiresConfirmation: boolean = true;
+
+  editNote({ title, content }: INotePayload, confirmation: boolean = false): void {
+    if (confirmation) {
+      if (title?.trim()) this.title = title;
+      if (content?.trim()) this.content = content;
+      this.editDate = new Date();
+    } else {
+      throw new Error('Confirmation required for editing ConfirmationNote');
+    }
+  }
 }
 
 interface ITodoList {
   notes: (DefaultNote | ConfirmationNote)[];
   addNote(title: string, content: string, requiresConfirmation: boolean): void;
   deleteNote(id: number): DefaultNote | ConfirmationNote | null;
-  editNote(id: number, confirmation: boolean, { title, content }: INotePayload): ConfirmationNote | DefaultNote;
+  editNote(id: number, { title, content }: INotePayload, confirmation?: boolean): ConfirmationNote | DefaultNote;
   markAsDone(id: number): void;
   getNoteById(id: number): DefaultNote | ConfirmationNote | undefined;
   getAllNotes(): (DefaultNote | ConfirmationNote)[];
@@ -73,23 +86,15 @@ class TodoList implements ITodoList {
       throw new Error('Note not found');
     } else return note;
   }
-
-  editNote(id: number, confirmation: boolean, { title, content }: INotePayload): ConfirmationNote | DefaultNote {
+  editNote(id: number, { title, content }: INotePayload, confirmation?: boolean): ConfirmationNote | DefaultNote {
     const note = this.notes.find(note => note.id === id);
     if (!note) {
       throw new Error('Note not found');
     }
-    const oldNote = { ...note };
-    if (note instanceof ConfirmationNote) {
-      if (confirmation) {
-        note.editNote({ title, content });
-      }
-    } else {
-      note.editNote({ title, content });
-    }
-    return note instanceof ConfirmationNote
-      ? new ConfirmationNote(oldNote.id, oldNote.title, oldNote.content)
-      : new DefaultNote(oldNote.id, oldNote.title, oldNote.content);
+    const oldNote = { ...note } as ConfirmationNote | DefaultNote;
+
+    note.editNote({ title, content }, confirmation);
+    return oldNote;
   }
 
   markAsDone(id: number) {
@@ -130,10 +135,10 @@ class TodoListWithSort extends TodoList {
     return this.notes.sort((a, b) => a.creationDate.getTime() - b.creationDate.getTime());
   }
 }
-const list = new TodoList();
-list.addNote('title', 'context', false);
-list.addNote('titleR', 'contextR', true);
-// console.log(list.deleteNote(1));
+// const list = new TodoList();
+// list.addNote('title', 'context', false);
+// list.addNote('titleR', 'contextR', true);
+// // console.log(list.deleteNote(1));
 
-console.log(list.editNote(2, true, { title: 'newTitle', content: 'NewContent' }));
-console.log(list.getAllNotes());
+// console.log(list.editNote(2, { content: 'NewContent' }, true));
+// console.log(list.getAllNotes());
